@@ -1,0 +1,155 @@
+{
+  "tool": {
+    "nombre": "FTP",
+    "protocolo": "FTP (21/tcp)",
+    "descripcion": "File Transfer Protocol. Servicio de transferencia de archivos que corre por defecto en el puerto 21. En enumeracion nos interesa el banner con la version, si permite login anonimo, y el contenido de los directorios accesibles."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -p21 -sC -A 10.10.10.10",
+      "descripcion": "Escaneo completo del puerto 21. Trae version del servicio, corre los scripts por defecto (incluyendo ftp-anon y ftp-syst) y hace deteccion de OS."
+    },
+    {
+      "comando": "nmap -sV -p21 --script ftp-anon 10.10.10.10",
+      "descripcion": "Corre solo el script ftp-anon para comprobar si el login anonimo esta permitido."
+    },
+    {
+      "comando": "nmap -p21 --script ftp-* 10.10.10.10",
+      "descripcion": "Corre todos los scripts NSE relacionados con FTP contra el objetivo."
+    },
+    {
+      "comando": "ftp 10.10.10.10",
+      "descripcion": "Conexion basica al servidor FTP. Luego pide usuario y contrasena de forma interactiva."
+    },
+    {
+      "comando": "ftp anonymous@10.10.10.10",
+      "descripcion": "Conexion al FTP especificando el usuario anonymous directamente. La contrasena suele quedar vacia."
+    },
+    {
+      "comando": "nc -nv 10.10.10.10 21",
+      "descripcion": "Se conecta al puerto 21 con netcat para leer el banner del servicio de forma cruda."
+    },
+    {
+      "comando": "telnet 10.10.10.10 21",
+      "descripcion": "Conexion cruda al puerto 21 con telnet para capturar el banner."
+    },
+    {
+      "comando": "openssl s_client -connect 10.10.10.10:21 -starttls ftp",
+      "descripcion": "Se conecta a un FTP con TLS (FTPS) para leer el banner y el certificado, util cuando el servicio cifra la sesion."
+    },
+    {
+      "comando": "ls",
+      "descripcion": "Dentro de la sesion FTP, lista el contenido del directorio actual."
+    },
+    {
+      "comando": "ls -la",
+      "descripcion": "Dentro de la sesion FTP, lista todo el contenido incluyendo archivos ocultos y permisos."
+    },
+    {
+      "comando": "cd <directorio>",
+      "descripcion": "Dentro de la sesion FTP, cambia al directorio indicado."
+    },
+    {
+      "comando": "get <archivo>",
+      "descripcion": "Dentro de la sesion FTP, descarga el archivo indicado al directorio local."
+    },
+    {
+      "comando": "put <archivo>",
+      "descripcion": "Dentro de la sesion FTP, sube un archivo local al servidor. Solo funciona si el servidor permite escritura."
+    },
+    {
+      "comando": "binary",
+      "descripcion": "Dentro de la sesion FTP, cambia el modo de transferencia a binario para no corromper archivos que no son texto."
+    },
+    {
+      "comando": "wget -m --no-passive ftp://anonymous:anonymous@10.10.10.10",
+      "descripcion": "Descarga de forma recursiva (mirror) todo el contenido accesible del FTP como usuario anonimo."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Estas enumerando el objetivo 10.10.10.10. Escanea su puerto 21 para traer la version del servicio y correr los scripts por defecto de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sV -sC -p21 10.10.10.10",
+        "nmap -sV -p21 -sC -A 10.10.10.10",
+        "nmap -sV -sC -p21 -A 10.10.10.10",
+        "nmap -sV -p21 -sC 10.10.10.10",
+        "nmap -p21 -sV -sC 10.10.10.10",
+        "nmap -sC -sV -p21 10.10.10.10"
+      ],
+      "pista": "Necesitas la bandera de version, la de scripts por defecto y limitar el escaneo al puerto 21.",
+      "explicacion": "-sV trae la version del servicio, -sC corre los scripts por defecto (entre ellos ftp-anon y ftp-syst), -p21 limita al puerto de FTP y -A agrega deteccion de OS y traceroute. Es el escaneo tipico para empezar a enumerar un FTP."
+    },
+    {
+      "enunciado": "Quieres comprobar puntualmente si el FTP de 10.10.10.10 permite login anonimo, corriendo solo ese script de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -p21 --script ftp-anon 10.10.10.10",
+        "nmap -sV -p21 --script ftp-anon 10.10.10.10",
+        "nmap --script ftp-anon -p21 10.10.10.10",
+        "nmap -p21 --script=ftp-anon 10.10.10.10"
+      ],
+      "pista": "El script de nmap que revisa el acceso anonimo se llama ftp-anon.",
+      "explicacion": "El script ftp-anon intenta un login anonimo y reporta si esta permitido, ademas de listar el directorio si logra entrar. Es mas rapido y silencioso que correr todos los scripts cuando solo te interesa ese dato."
+    },
+    {
+      "enunciado": "El FTP de 10.10.10.10 permite acceso anonimo. Conectate al servidor especificando el usuario anonymous directamente en el comando. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "ftp anonymous@10.10.10.10"
+      ],
+      "pista": "El cliente ftp acepta el formato usuario@host igual que ssh.",
+      "explicacion": "ftp anonymous@10.10.10.10 abre la conexion ya con el usuario anonymous. Cuando pida contrasena la dejas vacia (o pones anonymous) y entras. Tambien vale conectar con solo 'ftp 10.10.10.10' y escribir anonymous cuando pida el usuario."
+    },
+    {
+      "enunciado": "Prefieres conectarte al FTP de 10.10.10.10 sin pasar el usuario en el comando, para que te lo pida de forma interactiva. Escribe el comando de conexion.",
+      "respuestas_aceptadas": [
+        "ftp 10.10.10.10"
+      ],
+      "pista": "Es la forma mas basica de conexion, solo el binario y el destino.",
+      "explicacion": "ftp 10.10.10.10 abre la sesion y el servidor pide usuario y contrasena de forma interactiva. Para acceso anonimo escribes anonymous como usuario y dejas la contrasena vacia."
+    },
+    {
+      "enunciado": "Ya estas dentro de la sesion FTP y quieres ver todo el contenido del directorio actual, incluyendo archivos ocultos. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "ls -la",
+        "ls -al",
+        "ls -a -l"
+      ],
+      "pista": "Es el mismo flag que usarias en una shell de Linux para ver ocultos y detalle.",
+      "explicacion": "Dentro del FTP, ls -la lista todo con permisos y archivos ocultos. Muchos flags de labs estan en archivos que no aparecen con un ls simple, por eso conviene siempre listar con -la."
+    },
+    {
+      "enunciado": "Dentro del FTP encontraste el archivo flag.txt y quieres descargarlo a tu maquina. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "get flag.txt"
+      ],
+      "pista": "El comando para bajar un archivo desde el FTP empieza con get.",
+      "explicacion": "get flag.txt descarga el archivo al directorio local desde el que abriste la sesion FTP. Luego lo lees en tu maquina con cat flag.txt."
+    },
+    {
+      "enunciado": "Quieres leer el banner crudo del servicio FTP de 10.10.10.10 conectandote al puerto 21 con netcat. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nc -nv 10.10.10.10 21",
+        "nc 10.10.10.10 21"
+      ],
+      "pista": "Usa netcat en modo verboso y sin resolver DNS, apuntando al puerto 21.",
+      "explicacion": "nc -nv 10.10.10.10 21 abre una conexion cruda al puerto 21. -n evita resolucion DNS y -v da salida verbosa. El servidor responde con su banner, que muchas veces revela el software y la version exacta del FTP."
+    },
+    {
+      "enunciado": "El FTP de 10.10.10.10 corre sobre TLS y quieres leer su banner y certificado. Conectate con openssl haciendo starttls sobre ftp. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "openssl s_client -connect 10.10.10.10:21 -starttls ftp"
+      ],
+      "pista": "Es el cliente s_client de openssl, con -connect al puerto 21 y el -starttls apropiado.",
+      "explicacion": "openssl s_client -connect 10.10.10.10:21 -starttls ftp negocia el cifrado sobre el FTP y te deja leer el banner y el certificado. El certificado a veces filtra nombres de host internos y correos utiles para seguir enumerando."
+    },
+    {
+      "enunciado": "Quieres descargar de forma recursiva todo el contenido accesible del FTP anonimo de 10.10.10.10, en un solo comando. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "wget -m --no-passive ftp://anonymous:anonymous@10.10.10.10",
+        "wget -m ftp://anonymous:anonymous@10.10.10.10"
+      ],
+      "pista": "Usa wget en modo mirror (-m) con credenciales anonymous embebidas en la URL del ftp.",
+      "explicacion": "wget -m --no-passive ftp://anonymous:anonymous@10.10.10.10 hace un mirror de todo el arbol de directorios accesible. Es util cuando hay muchos archivos y no quieres bajarlos uno por uno. --no-passive fuerza modo activo, que a veces es necesario segun la config del servidor."
+    }
+  ]
+}

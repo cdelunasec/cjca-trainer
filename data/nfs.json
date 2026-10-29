@@ -1,0 +1,95 @@
+{
+  "tool": {
+    "nombre": "NFS",
+    "protocolo": "NFS (111/2049 tcp)",
+    "descripcion": "Network File System. Permite montar y acceder a sistemas de archivos por red como si fueran locales, tipico de entornos Linux y Unix. Corre sobre el portmapper (111) y el propio servicio (2049). En enumeracion buscamos que shares (exports) estan disponibles, los montamos y revisamos su contenido y permisos."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -p111,2049 10.10.10.10",
+      "descripcion": "Escaneo de version sobre los puertos del portmapper y NFS."
+    },
+    {
+      "comando": "nmap -sV --script nfs* 10.10.10.10 -p111,2049",
+      "descripcion": "Corre todos los scripts NSE de NFS, que listan exports, permisos y estadisticas."
+    },
+    {
+      "comando": "showmount -e 10.10.10.10",
+      "descripcion": "Muestra la lista de exports (shares NFS) disponibles en el servidor y quien puede montarlos."
+    },
+    {
+      "comando": "mkdir target-NFS",
+      "descripcion": "Crea un directorio local que servira como punto de montaje para el share NFS."
+    },
+    {
+      "comando": "mount -t nfs 10.10.10.10:/<share> ./target-NFS/ -o nolock",
+      "descripcion": "Monta el export NFS del servidor en el directorio local. -o nolock evita problemas de bloqueo de archivos."
+    },
+    {
+      "comando": "sudo mount -t nfs 10.10.10.10:/<share> ./target-NFS/ -o nolock",
+      "descripcion": "Monta el export NFS con privilegios, necesario en la mayoria de los sistemas."
+    },
+    {
+      "comando": "ls -la ./target-NFS/",
+      "descripcion": "Lista el contenido del share ya montado, con permisos y archivos ocultos."
+    },
+    {
+      "comando": "umount ./target-NFS",
+      "descripcion": "Desmonta el share NFS del directorio local cuando terminas."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres ver que exports (shares NFS) tiene disponibles el servidor 10.10.10.10 antes de montar nada. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "showmount -e 10.10.10.10"
+      ],
+      "pista": "El comando es showmount con el flag -e de exports.",
+      "explicacion": "showmount -e 10.10.10.10 lista los exports del servidor NFS y desde que hosts se permite montarlos. Es el primer paso, porque te dice que shares existen y a cuales podrias tener acceso antes de intentar el montaje."
+    },
+    {
+      "enunciado": "En 10.10.10.10 encontraste un export llamado /var/nfs y quieres montarlo en un directorio local llamado target-NFS, evitando bloqueos de archivos. Escribe el comando de montaje.",
+      "respuestas_aceptadas": [
+        "sudo mount -t nfs 10.10.10.10:/var/nfs ./target-NFS/ -o nolock",
+        "mount -t nfs 10.10.10.10:/var/nfs ./target-NFS/ -o nolock",
+        "sudo mount -t nfs 10.10.10.10:/var/nfs ./target-NFS -o nolock",
+        "mount -t nfs 10.10.10.10:/var/nfs ./target-NFS -o nolock"
+      ],
+      "pista": "Es mount con -t nfs, la ruta del share como IP:/ruta, el punto de montaje local y el flag -o nolock.",
+      "explicacion": "mount -t nfs 10.10.10.10:/var/nfs ./target-NFS/ -o nolock monta el export en tu directorio local. -t nfs indica el tipo de sistema de archivos y -o nolock evita que el cliente intente bloqueos que suelen fallar en labs. Normalmente necesitas sudo. Antes de montar hay que crear el directorio con mkdir."
+    },
+    {
+      "enunciado": "Ya montaste el share NFS en ./target-NFS y quieres ver todo su contenido incluyendo archivos ocultos y permisos. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "ls -la ./target-NFS/",
+        "ls -la ./target-NFS",
+        "ls -la target-NFS/",
+        "ls -la target-NFS"
+      ],
+      "pista": "Es un ls -la apuntando al directorio donde montaste el share.",
+      "explicacion": "ls -la ./target-NFS/ lista el contenido del share ya montado. Ver los permisos importa en NFS porque a veces los archivos pertenecen a UIDs especificos y puedes necesitar coincidir con ese UID para leerlos, lo que abre trucos de escalada mas adelante."
+    },
+    {
+      "enunciado": "Terminaste de revisar el share y quieres desmontarlo del directorio local. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "umount ./target-NFS",
+        "sudo umount ./target-NFS",
+        "umount target-NFS",
+        "sudo umount target-NFS"
+      ],
+      "pista": "El comando para desmontar es umount, sin la n despues de la u.",
+      "explicacion": "umount ./target-NFS libera el punto de montaje. Ojo con el nombre del comando, es umount y no unmount, es un error clasico. Conviene desmontar al terminar para dejar limpio el sistema."
+    },
+    {
+      "enunciado": "Quieres correr todos los scripts NSE de NFS de nmap contra 10.10.10.10, sobre los puertos del portmapper y el servicio. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sV --script nfs* 10.10.10.10 -p111,2049",
+        "nmap --script nfs* -sV -p111,2049 10.10.10.10",
+        "nmap -sV --script nfs* -p111,2049 10.10.10.10",
+        "nmap -p111,2049 --script nfs* -sV 10.10.10.10"
+      ],
+      "pista": "Usa --script con el comodin nfs* y limita a los puertos 111 y 2049.",
+      "explicacion": "nmap -sV --script nfs* 10.10.10.10 -p111,2049 corre todos los scripts de NFS (nfs-ls, nfs-showmount, nfs-statfs). Te da los exports y a veces lista el contenido directamente sin necesidad de montar, util para un vistazo rapido."
+    }
+  ]
+}

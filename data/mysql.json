@@ -1,0 +1,94 @@
+{
+  "tool": {
+    "nombre": "MySQL",
+    "protocolo": "MySQL (3306 tcp)",
+    "descripcion": "Sistema de gestion de bases de datos relacional de codigo abierto, muy comun en stacks LAMP y LEMP. Corre por defecto en el puerto 3306. En enumeracion buscamos la version, credenciales debiles o por defecto, y una vez dentro exploramos bases de datos, tablas y datos sensibles como credenciales, correos y hashes. Cliente principal: mysql."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -sC -p3306 10.10.10.10",
+      "descripcion": "Escaneo de version y scripts por defecto sobre el puerto de MySQL."
+    },
+    {
+      "comando": "nmap -sV -p3306 --script mysql* 10.10.10.10",
+      "descripcion": "Corre todos los scripts NSE de MySQL: version, usuarios, bases de datos y chequeo de password vacio."
+    },
+    {
+      "comando": "nmap -sV -p3306 --script mysql-empty-password 10.10.10.10",
+      "descripcion": "Comprueba especificamente si alguna cuenta permite login sin contrasena."
+    },
+    {
+      "comando": "mysql -u <usuario> -p<contrasena> -h 10.10.10.10",
+      "descripcion": "Se conecta al servidor MySQL con usuario y contrasena. Ojo: no hay espacio entre -p y la contrasena."
+    },
+    {
+      "comando": "mysql -u root -h 10.10.10.10",
+      "descripcion": "Intenta conectar como root sin contrasena. Si el servidor lo permite, entra directo."
+    },
+    {
+      "comando": "show databases;",
+      "descripcion": "Dentro de la sesion MySQL, lista todas las bases de datos disponibles."
+    },
+    {
+      "comando": "use <base_de_datos>;",
+      "descripcion": "Dentro de la sesion, selecciona una base de datos para trabajar sobre ella."
+    },
+    {
+      "comando": "show tables;",
+      "descripcion": "Dentro de la base seleccionada, lista todas sus tablas."
+    },
+    {
+      "comando": "select * from <tabla>;",
+      "descripcion": "Dentro de la sesion, muestra todo el contenido de una tabla."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres conectarte al servidor MySQL 10.10.10.10 con el usuario root y la contrasena 'password'. Recuerda el detalle del flag de contrasena. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "mysql -u root -ppassword -h 10.10.10.10",
+        "mysql -h 10.10.10.10 -u root -ppassword"
+      ],
+      "pista": "El usuario va con -u y la contrasena con -p pegada, sin espacio, y el host con -h.",
+      "explicacion": "mysql -u root -ppassword -h 10.10.10.10 conecta al servidor. El detalle que casi todo el mundo falla es que NO hay espacio entre -p y la contrasena. Si escribes -p password, MySQL interpreta 'password' como el nombre de la base de datos y te pide la clave aparte. Con -h indicas el host remoto."
+    },
+    {
+      "enunciado": "Sospechas que el MySQL de 10.10.10.10 permite login sin contrasena y quieres comprobarlo con el script de nmap correspondiente. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -p3306 --script mysql-empty-password 10.10.10.10",
+        "nmap -sV -p3306 --script mysql-empty-password 10.10.10.10",
+        "nmap --script mysql-empty-password -p3306 10.10.10.10",
+        "sudo nmap -sV -p3306 --script mysql-empty-password 10.10.10.10"
+      ],
+      "pista": "El script de nmap se llama mysql-empty-password.",
+      "explicacion": "nmap -sV -p3306 --script mysql-empty-password 10.10.10.10 revisa si alguna cuenta, tipicamente root, entra sin contrasena. Es una mala configuracion comun y un camino directo de acceso, por eso conviene probarlo temprano en la enumeracion."
+    },
+    {
+      "enunciado": "Ya estas dentro de la sesion MySQL y quieres ver todas las bases de datos disponibles. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "show databases;",
+        "SHOW DATABASES;"
+      ],
+      "pista": "Es una sentencia SQL que muestra las bases de datos, terminada en punto y coma.",
+      "explicacion": "show databases; lista todas las bases de datos del servidor. Las de sistema (information_schema, mysql, performance_schema, sys) vienen por defecto, asi que lo interesante son las que no reconozcas, que suelen contener los datos de la aplicacion. No olvides el punto y coma al final."
+    },
+    {
+      "enunciado": "Viste una base de datos llamada 'users' y quieres seleccionarla para trabajar sobre ella. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "use users;",
+        "USE users;"
+      ],
+      "pista": "La sentencia SQL para seleccionar una base empieza con use.",
+      "explicacion": "use users; te posiciona dentro de esa base de datos, de modo que las consultas siguientes aplican sobre ella. Es el paso previo a listar tablas y leer datos."
+    },
+    {
+      "enunciado": "Ya estas dentro de una base de datos y quieres listar todas sus tablas. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "show tables;",
+        "SHOW TABLES;"
+      ],
+      "pista": "Es la sentencia hermana de show databases, pero para tablas.",
+      "explicacion": "show tables; lista las tablas de la base seleccionada. De aqui identificas cuales pueden tener credenciales, hashes o informacion sensible, para luego leerlas con un select."
+    }
+  ]
+}

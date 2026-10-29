@@ -1,0 +1,76 @@
+{
+  "tool": {
+    "nombre": "Oracle TNS",
+    "protocolo": "Oracle TNS (1521 tcp)",
+    "descripcion": "Transparent Network Substrate. Es el listener de Oracle Database, la puerta por donde los clientes piden conexion a las instancias. En enumeracion buscamos la version del listener, los SIDs disponibles y credenciales validas para conectarnos al servicio. Herramientas clave: nmap, odat (Oracle Database Attacking Tool) y sqlplus."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -sC -p1521 10.10.10.10",
+      "descripcion": "Escaneo de version y scripts por defecto sobre el puerto del listener TNS."
+    },
+    {
+      "comando": "nmap -p1521 --script oracle-tns-version 10.10.10.10",
+      "descripcion": "Consulta la version exacta del listener Oracle a traves del script TNS."
+    },
+    {
+      "comando": "nmap -p1521 --script oracle-sid-brute 10.10.10.10",
+      "descripcion": "Fuerza por diccionario los SIDs (identificadores de instancia) del listener."
+    },
+    {
+      "comando": "odat all -s 10.10.10.10",
+      "descripcion": "Corre todos los modulos de odat contra el objetivo: version, SIDs, credenciales por defecto y mas."
+    },
+    {
+      "comando": "odat sidguesser -s 10.10.10.10 -p 1521",
+      "descripcion": "Enumera SIDs validos del listener por diccionario."
+    },
+    {
+      "comando": "odat passwordguesser -s 10.10.10.10 -p 1521 -d <SID> --accounts-file accounts.txt",
+      "descripcion": "Fuerza usuario y contrasena contra un SID conocido usando un archivo de cuentas."
+    },
+    {
+      "comando": "sqlplus <usuario>/<contrasena>@10.10.10.10:1521/<SID>",
+      "descripcion": "Se conecta a la base de datos Oracle con sqlplus usando usuario, contrasena y SID."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres hacer un escaneo de version y scripts por defecto sobre el puerto del listener Oracle TNS (1521) en 10.10.10.10. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sV -sC -p1521 10.10.10.10",
+        "nmap -sC -sV -p1521 10.10.10.10",
+        "nmap -sV -sC -p 1521 10.10.10.10"
+      ],
+      "pista": "Combina -sV con -sC y limita al puerto 1521.",
+      "explicacion": "nmap -sV -sC -p1521 10.10.10.10 confirma que hay un listener Oracle y lanza los scripts NSE relacionados. Con la version y los SIDs que aparezcan, ya puedes ir a odat o sqlplus."
+    },
+    {
+      "enunciado": "Quieres enumerar los SIDs validos del listener Oracle en 10.10.10.10 por diccionario usando el script oracle-sid-brute de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -p1521 --script oracle-sid-brute 10.10.10.10",
+        "nmap --script oracle-sid-brute -p1521 10.10.10.10"
+      ],
+      "pista": "Usa --script oracle-sid-brute sobre el puerto 1521.",
+      "explicacion": "nmap -p1521 --script oracle-sid-brute 10.10.10.10 prueba una lista de SIDs comunes (XE, ORCL, PROD) y te dice cuales acepta el listener. Sin un SID valido no puedes autenticarte contra la base, asi que es el paso anterior a probar credenciales."
+    },
+    {
+      "enunciado": "Quieres correr todos los modulos de odat de golpe contra el listener Oracle de 10.10.10.10. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "odat all -s 10.10.10.10",
+        "odat all -s 10.10.10.10 -p 1521"
+      ],
+      "pista": "El modulo 'all' de odat toma el servidor con -s.",
+      "explicacion": "odat all -s 10.10.10.10 hace la pasada completa: version del TNS, sidguesser, passwordguesser con cuentas por defecto y checks tipicos. Es el barrido rapido antes de ir manualmente con sqlplus."
+    },
+    {
+      "enunciado": "Averiguaste que el SID es XE y las credenciales scott/tiger funcionan en 10.10.10.10. Conectate con sqlplus al puerto 1521. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "sqlplus scott/tiger@10.10.10.10:1521/XE",
+        "sqlplus scott/tiger@10.10.10.10/XE"
+      ],
+      "pista": "sqlplus usa el formato usuario/contrasena@host:puerto/SID.",
+      "explicacion": "sqlplus scott/tiger@10.10.10.10:1521/XE te abre la sesion SQL contra la instancia XE. Ya dentro se hacen consultas normales de Oracle (select * from v$version, select username from all_users) para seguir enumerando."
+    }
+  ]
+}

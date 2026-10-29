@@ -1,0 +1,319 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Sistema de diseño — CJCA Trainer.
+ *
+ * Estética: claro tipo Apple. Fondo gris muy claro, superficies blancas,
+ * bordes hairline translúcidos, profundidad por sombras suaves + glass,
+ * un solo acento (azul del sistema). Sin violeta ni gradientes llamativos.
+ * Colores en oklch. Tokens -> utilidades vía @theme inline.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  --font-sans-stack: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI",
+    system-ui, sans-serif;
+  --font-mono-stack: "SF Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular",
+    Menlo, monospace;
+
+  --background: oklch(0.968 0.002 247);
+  --foreground: oklch(0.23 0.006 264);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.23 0.006 264);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.23 0.006 264);
+  --primary: oklch(0.6 0.192 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.003 247);
+  --secondary-foreground: oklch(0.23 0.006 264);
+  --muted: oklch(0.96 0.003 247);
+  --muted-foreground: oklch(0.55 0.01 264);
+  --accent: oklch(0.955 0.004 247);
+  --accent-foreground: oklch(0.23 0.006 264);
+  --destructive: oklch(0.63 0.234 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.76 0.17 152);
+  --success-foreground: oklch(0.99 0 0);
+  --border: oklch(0.23 0.02 264 / 10%);
+  --input: oklch(0.23 0.02 264 / 14%);
+  --ring: oklch(0.6 0.192 255 / 45%);
+  --chart-1: oklch(0.6 0.192 255);
+  --chart-2: oklch(0.76 0.17 152);
+  --chart-3: oklch(0.7 0.11 210);
+  --chart-4: oklch(0.76 0.15 70);
+  --chart-5: oklch(0.65 0.015 260);
+  --sidebar: oklch(0.984 0.002 247);
+  --sidebar-foreground: oklch(0.23 0.006 264);
+  --sidebar-primary: oklch(0.6 0.192 255);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.955 0.004 247);
+  --sidebar-accent-foreground: oklch(0.23 0.006 264);
+  --sidebar-border: oklch(0.23 0.02 264 / 10%);
+  --sidebar-ring: oklch(0.6 0.192 255 / 45%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  /* El fondo lo pinta html para que cubra SIEMPRE toda la ventana, incluido el
+     overscroll y las páginas cortas (evita franjas blancas). */
+  html {
+    -webkit-text-size-adjust: 100%;
+    min-height: 100%;
+    background-color: var(--color-background);
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Halo de profundidad. Sin background-attachment: fixed (causaba jank al
+       hacer scroll). */
+    background-image: radial-gradient(
+      1000px 520px at 50% -260px,
+      color-mix(in srgb, var(--primary) 7%, transparent),
+      transparent 72%
+    );
+    background-repeat: no-repeat;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.021em;
+  }
+}
+
+@layer utilities {
+  /* Vidrio esmerilado tipo Apple (vibrancy). Blur moderado para no penalizar
+     el scroll en el header sticky. */
+  .glass {
+    background: color-mix(in srgb, var(--card) 82%, transparent);
+    backdrop-filter: saturate(140%) blur(12px);
+    -webkit-backdrop-filter: saturate(140%) blur(12px);
+  }
+
+  /* Transición de página al navegar entre secciones. */
+  .route-fade {
+    animation: cjca-fade 0.32s ease-out both;
+  }
+
+  /* Carga estilo shimmer (barrido) para los skeletons. */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--muted-foreground) 12%, var(--card)) 8%,
+      color-mix(in srgb, var(--muted-foreground) 5%, var(--card)) 20%,
+      color-mix(in srgb, var(--muted-foreground) 12%, var(--card)) 33%
+    );
+    background-size: 800px 100%;
+    animation: cjca-shimmer 1.25s linear infinite;
+  }
+
+  /* Profundidad: sombras suaves y amplias. */
+  .elev-1 {
+    box-shadow:
+      0 1px 2px rgba(20, 23, 28, 0.05),
+      0 1px 3px rgba(20, 23, 28, 0.06);
+  }
+  .elev-2 {
+    box-shadow:
+      0 4px 12px rgba(20, 23, 28, 0.06),
+      0 14px 34px rgba(20, 23, 28, 0.09);
+  }
+  .elev-3 {
+    box-shadow: 0 22px 52px rgba(20, 23, 28, 0.15);
+  }
+
+  .anim-enter {
+    animation: cjca-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .anim-pop {
+    animation: cjca-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .anim-shake {
+    animation: cjca-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+
+  /* Transición estándar suave (easing Apple). */
+  .ease-apple {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Paneles que entran deslizándose según la dirección del cambio de pestaña. */
+  .slide-from-right {
+    animation: cjca-slide-from-right 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .slide-from-left {
+    animation: cjca-slide-from-left 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes cjca-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Deslizamiento entre pestañas (Entrar / Registrarse). */
+@keyframes cjca-slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cjca-slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Barra de progreso de la pantalla de arranque (app instalada). */
+@keyframes cjca-splash-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes cjca-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cjca-shimmer {
+  0% {
+    background-position: -420px 0;
+  }
+  100% {
+    background-position: 420px 0;
+  }
+}
+
+@keyframes cjca-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cjca-shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-5px);
+  }
+  40%,
+  60% {
+    transform: translateX(5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-enter,
+  .anim-pop,
+  .anim-shake,
+  .slide-from-left,
+  .slide-from-right,
+  .route-fade {
+    animation: none !important;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}

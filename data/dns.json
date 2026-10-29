@@ -1,0 +1,84 @@
+{
+  "tool": {
+    "nombre": "DNS",
+    "protocolo": "DNS (53 udp/tcp)",
+    "descripcion": "Domain Name System. Traduce nombres de dominio a direcciones IP y guarda distintos tipos de registros (A, NS, MX, TXT, SOA). En enumeracion nos interesa consultar registros, identificar la version del servidor y, sobre todo, intentar una transferencia de zona (AXFR), que si esta mal configurada nos entrega el mapa completo de la infraestructura interna. Herramienta principal: dig."
+  },
+  "commands": [
+    {
+      "comando": "dig ns <dominio> @10.10.10.10",
+      "descripcion": "Consulta los registros NS (nameservers) del dominio contra un servidor DNS especifico."
+    },
+    {
+      "comando": "dig any <dominio> @10.10.10.10",
+      "descripcion": "Pide todos los registros disponibles del dominio en una sola consulta."
+    },
+    {
+      "comando": "dig soa <dominio> @10.10.10.10",
+      "descripcion": "Consulta el registro SOA (Start of Authority), que da datos del servidor autoritativo y los tiempos de la zona."
+    },
+    {
+      "comando": "dig CH TXT version.bind @10.10.10.10",
+      "descripcion": "Consulta la version del servidor DNS usando la clase CHAOS. Puede revelar el software y version de BIND."
+    },
+    {
+      "comando": "dig axfr <dominio> @10.10.10.10",
+      "descripcion": "Intenta una transferencia de zona completa (AXFR). Si el servidor la permite, devuelve todos los registros de la zona."
+    },
+    {
+      "comando": "dig axfr internal.<dominio> @10.10.10.10",
+      "descripcion": "Intenta la transferencia de zona sobre un subdominio interno, que a veces esta permitida aunque la del dominio principal no."
+    },
+    {
+      "comando": "dnsenum --dnsserver 10.10.10.10 --enum -p 0 -s 0 -o found.txt -f <wordlist> <dominio>",
+      "descripcion": "Fuerza por diccionario subdominios del objetivo apoyandose en un wordlist y guarda los encontrados."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres consultar los nameservers (registros NS) del dominio inlanefreight.htb contra el servidor DNS 10.10.10.10. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "dig ns inlanefreight.htb @10.10.10.10",
+        "dig NS inlanefreight.htb @10.10.10.10"
+      ],
+      "pista": "Es dig, el tipo de registro ns, el dominio, y el servidor precedido por arroba.",
+      "explicacion": "dig ns inlanefreight.htb @10.10.10.10 pregunta cuales son los nameservers del dominio al servidor indicado con @. Saber los NS es util porque son los servidores autoritativos, justo contra los que vas a intentar la transferencia de zona."
+    },
+    {
+      "enunciado": "El paso clave de la enumeracion DNS: intenta una transferencia de zona completa del dominio inlanefreight.htb contra el servidor DNS 10.10.10.10. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "dig axfr inlanefreight.htb @10.10.10.10",
+        "dig AXFR inlanefreight.htb @10.10.10.10"
+      ],
+      "pista": "El tipo de consulta para transferencia de zona es axfr.",
+      "explicacion": "dig axfr inlanefreight.htb @10.10.10.10 pide la zona completa. AXFR significa Asynchronous Full Transfer Zone. Si el servidor esta mal configurado con allow-transfer any, te devuelve todos los registros: subdominios internos, IPs, hosts. Es una de las fugas de informacion mas jugosas del modulo y casi siempre cae en el examen."
+    },
+    {
+      "enunciado": "La transferencia de zona del dominio principal fallo, pero quieres probarla sobre el subdominio interno internal.inlanefreight.htb contra el servidor DNS 10.10.10.10. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "dig axfr internal.inlanefreight.htb @10.10.10.10",
+        "dig AXFR internal.inlanefreight.htb @10.10.10.10"
+      ],
+      "pista": "Mismo comando de transferencia de zona, pero con el subdominio interno en vez del dominio raiz.",
+      "explicacion": "dig axfr internal.inlanefreight.htb @10.10.10.10 prueba la transferencia sobre el subdominio interno. En varios labs la zona del dominio principal esta protegida pero la interna no, asi que cuando el AXFR del dominio raiz falla, siempre vale intentar con los subdominios que hayas descubierto."
+    },
+    {
+      "enunciado": "Quieres averiguar la version del servidor DNS 10.10.10.10 usando una consulta TXT de la clase CHAOS a version.bind. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "dig CH TXT version.bind @10.10.10.10",
+        "dig ch txt version.bind @10.10.10.10"
+      ],
+      "pista": "Necesitas la clase CH (CHAOS), el tipo TXT y el nombre especial version.bind.",
+      "explicacion": "dig CH TXT version.bind @10.10.10.10 consulta la version del servidor usando la clase CHAOS, una clase especial distinta de la comun (IN). Muchos servidores BIND responden con su version exacta, lo que te ayuda a buscar vulnerabilidades conocidas de esa version."
+    },
+    {
+      "enunciado": "Quieres pedir todos los registros disponibles del dominio inlanefreight.htb al servidor DNS 10.10.10.10 en una sola consulta. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "dig any inlanefreight.htb @10.10.10.10",
+        "dig ANY inlanefreight.htb @10.10.10.10"
+      ],
+      "pista": "El tipo de registro que pide todos a la vez es any.",
+      "explicacion": "dig any inlanefreight.htb @10.10.10.10 solicita todos los tipos de registro de una. Aunque muchos servidores modernos limitan la respuesta a ANY, sigue siendo una consulta rapida para ver A, MX, NS y TXT juntos sin lanzar varias consultas separadas."
+    }
+  ]
+}

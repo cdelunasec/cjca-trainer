@@ -1,0 +1,130 @@
+{
+  "tool": {
+    "nombre": "SMB",
+    "protocolo": "SMB (139/445 tcp)",
+    "descripcion": "Server Message Block. Protocolo de comparticion de archivos, impresoras y recursos en red, muy comun en entornos Windows y en servidores Samba. En enumeracion buscamos shares accesibles, sesiones nulas, usuarios, grupos e informacion del dominio. Herramientas clave: smbclient, rpcclient, smbmap, crackmapexec y enum4linux-ng."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -sC -p139,445 10.10.10.10",
+      "descripcion": "Escaneo de version y scripts por defecto sobre los puertos de SMB. Trae el banner y datos basicos del servicio."
+    },
+    {
+      "comando": "nmap -p445 --script smb-os-discovery 10.10.10.10",
+      "descripcion": "Descubre el sistema operativo, nombre de equipo y dominio a traves de SMB."
+    },
+    {
+      "comando": "smbclient -N -L 10.10.10.10",
+      "descripcion": "Lista los shares del servidor usando sesion nula (-N sin contrasena, -L para listar)."
+    },
+    {
+      "comando": "smbclient -L 10.10.10.10 -U <usuario>",
+      "descripcion": "Lista los shares autenticandose con un usuario valido."
+    },
+    {
+      "comando": "smbclient //10.10.10.10/<share>",
+      "descripcion": "Se conecta a un share especifico para navegarlo."
+    },
+    {
+      "comando": "smbclient //10.10.10.10/<share> -N",
+      "descripcion": "Se conecta a un share especifico usando sesion nula, sin credenciales."
+    },
+    {
+      "comando": "smbmap -H 10.10.10.10",
+      "descripcion": "Enumera los shares del servidor y muestra los permisos de acceso (lectura/escritura) sobre cada uno."
+    },
+    {
+      "comando": "smbmap -H 10.10.10.10 -u <usuario> -p <contrasena>",
+      "descripcion": "Enumera shares y permisos autenticandose con credenciales."
+    },
+    {
+      "comando": "rpcclient -U \"\" 10.10.10.10",
+      "descripcion": "Abre una sesion RPC con usuario vacio (sesion nula) para interactuar con el servicio y enumerar informacion."
+    },
+    {
+      "comando": "crackmapexec smb 10.10.10.10 --shares -u '' -p ''",
+      "descripcion": "Enumera los shares usando autenticacion de sesion nula con crackmapexec."
+    },
+    {
+      "comando": "enum4linux-ng.py 10.10.10.10 -A",
+      "descripcion": "Enumeracion automatica y completa de SMB: usuarios, grupos, shares, politicas de contrasena e informacion del sistema."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres listar todos los shares del servidor SMB 10.10.10.10 usando una sesion nula, sin credenciales, con smbclient. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "smbclient -L 10.10.10.10 -N",
+        "smbclient -N -L 10.10.10.10",
+        "smbclient -L //10.10.10.10 -N",
+        "smbclient -N -L //10.10.10.10",
+        "smbclient -L //10.10.10.10/ -N"
+      ],
+      "pista": "El flag -N usa sesion nula y el flag -L lista los shares.",
+      "explicacion": "smbclient -L 10.10.10.10 -N pide la lista de shares sin autenticarse. -L le dice que solo liste y -N fuerza sesion nula (sin contrasena). El // solo hace falta cuando te vas a conectar a un share concreto (smbclient //10.10.10.10/notes). Es de lo primero que se prueba, porque muchos servidores exponen shares por sesion nula."
+    },
+    {
+      "enunciado": "En 10.10.10.10 descubriste un share llamado 'notes' y quieres conectarte a el usando sesion nula para navegarlo. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "smbclient //10.10.10.10/notes -N",
+        "smbclient -N //10.10.10.10/notes"
+      ],
+      "pista": "Es smbclient apuntando directo al share, con el flag de sesion nula.",
+      "explicacion": "smbclient //10.10.10.10/notes -N te conecta al share 'notes' sin credenciales. Una vez dentro navegas con ls, cd y descargas con get, igual que en FTP."
+    },
+    {
+      "enunciado": "Quieres enumerar los shares de 10.10.10.10 y ver que permisos de lectura o escritura tienes sobre cada uno, con smbmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "smbmap -H 10.10.10.10"
+      ],
+      "pista": "smbmap usa el flag -H para indicar el host.",
+      "explicacion": "smbmap -H 10.10.10.10 lista los shares junto con los permisos efectivos (READ, WRITE, NO ACCESS). Es mas util que smbclient -L cuando quieres saber de inmediato donde puedes escribir o leer, no solo que shares existen."
+    },
+    {
+      "enunciado": "Quieres abrir una sesion RPC contra 10.10.10.10 usando una sesion nula (usuario vacio) para enumerar informacion del dominio. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "rpcclient -U \"\" 10.10.10.10",
+        "rpcclient -U '' 10.10.10.10",
+        "rpcclient -U \"\" -N 10.10.10.10"
+      ],
+      "pista": "Es rpcclient con el flag -U y un usuario entre comillas vacio.",
+      "explicacion": "rpcclient -U \"\" 10.10.10.10 abre una sesion RPC nula. El usuario vacio entre comillas es lo que produce la sesion nula. Ya dentro puedes correr comandos como enumdomusers, querydominfo o netshareenumall para sacar usuarios, info del dominio y shares."
+    },
+    {
+      "enunciado": "Ya estas dentro de rpcclient y quieres enumerar todos los usuarios del dominio. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "enumdomusers"
+      ],
+      "pista": "El comando dentro de rpcclient empieza con enumdom y termina en el plural de usuario en ingles.",
+      "explicacion": "enumdomusers lista todas las cuentas de usuario del dominio con su RID. Es una de las razones principales para entrar a rpcclient, porque te da la lista de usuarios que luego puedes usar para ataques de password o para seguir enumerando."
+    },
+    {
+      "enunciado": "Dentro de rpcclient quieres ver la informacion general del dominio (nombre, politicas, cantidad de usuarios). Escribe el comando.",
+      "respuestas_aceptadas": [
+        "querydominfo"
+      ],
+      "pista": "El comando junta las palabras query, dom e info.",
+      "explicacion": "querydominfo devuelve informacion del dominio o workgroup: nombre del dominio, servidor, total de usuarios y politicas basicas. Ayuda a entender si estas frente a un dominio real o un workgroup local."
+    },
+    {
+      "enunciado": "Dentro de rpcclient quieres listar todos los shares disponibles en el servidor. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "netshareenumall",
+        "netshareenum"
+      ],
+      "pista": "El comando empieza con netshareenum.",
+      "explicacion": "netshareenumall enumera todos los shares del servidor, incluyendo algunos administrativos que no siempre aparecen con smbclient -L. Es util contrastar esta salida con la de otras herramientas para no perderte ningun share."
+    },
+    {
+      "enunciado": "Quieres correr una enumeracion completa y automatica de SMB contra 10.10.10.10 (usuarios, grupos, shares, politicas) con enum4linux-ng. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "enum4linux-ng.py 10.10.10.10 -A",
+        "enum4linux-ng.py -A 10.10.10.10",
+        "./enum4linux-ng.py 10.10.10.10 -A",
+        "enum4linux-ng 10.10.10.10 -A"
+      ],
+      "pista": "Es el script enum4linux-ng con el flag -A de enumeracion agresiva o completa.",
+      "explicacion": "enum4linux-ng.py 10.10.10.10 -A hace la pasada completa: junta lo que sacarian rpcclient, smbclient y nmblookup en una sola corrida y te devuelve usuarios, grupos, shares, politicas de contrasena e info del sistema. Es un buen primer barrido antes de ir a mano con rpcclient."
+    }
+  ]
+}

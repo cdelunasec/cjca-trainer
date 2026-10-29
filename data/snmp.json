@@ -1,0 +1,67 @@
+{
+  "tool": {
+    "nombre": "SNMP",
+    "protocolo": "SNMP (161 udp)",
+    "descripcion": "Simple Network Management Protocol. Usado para monitorear y administrar dispositivos de red. Corre sobre UDP 161. La clave del acceso es la community string, que en las versiones 1 y 2c funciona como una contrasena en texto plano. En enumeracion primero descubrimos la community string valida y luego consultamos los OIDs para sacar informacion del sistema: usuarios, procesos, correos de admin, scripts y mas. Herramientas: snmpwalk, onesixtyone y braa."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sU -p161 10.10.10.10",
+      "descripcion": "Escaneo del puerto 161 sobre UDP para confirmar que el servicio SNMP esta activo."
+    },
+    {
+      "comando": "snmpwalk -v2c -c <community_string> 10.10.10.10",
+      "descripcion": "Recorre todos los OIDs del dispositivo usando SNMP version 2c y la community string indicada. Vuelca toda la informacion accesible."
+    },
+    {
+      "comando": "snmpwalk -v2c -c <community_string> 10.10.10.10 <OID>",
+      "descripcion": "Consulta un OID especifico en vez de recorrer todo el arbol."
+    },
+    {
+      "comando": "onesixtyone -c community.txt 10.10.10.10",
+      "descripcion": "Fuerza por diccionario la community string del servicio SNMP usando una lista de posibles nombres."
+    },
+    {
+      "comando": "braa <community_string>@10.10.10.10:.1.3.6.*",
+      "descripcion": "Enumera OIDs de forma masiva y rapida una vez que ya tienes la community string valida."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Todavia no conoces la community string del SNMP de 10.10.10.10 y quieres descubrirla por fuerza bruta con onesixtyone usando el wordlist community.txt. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "onesixtyone -c community.txt 10.10.10.10"
+      ],
+      "pista": "onesixtyone usa el flag -c para pasar el archivo de community strings.",
+      "explicacion": "onesixtyone -c community.txt 10.10.10.10 prueba muchos nombres de community string a gran velocidad. Como las community strings las nombra el administrador de forma arbitraria (backup, public, private, secret), hay que descubrirlas por diccionario. Sin la community string valida no puedes consultar nada por snmpwalk, por eso este es el primer paso."
+    },
+    {
+      "enunciado": "Descubriste que la community string valida de 10.10.10.10 es 'backup'. Recorre todos los OIDs del dispositivo usando SNMP version 2c con snmpwalk. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "snmpwalk -v2c -c backup 10.10.10.10",
+        "snmpwalk -c backup -v2c 10.10.10.10"
+      ],
+      "pista": "snmpwalk necesita la version con -v2c y la community string con -c, seguido del objetivo.",
+      "explicacion": "snmpwalk -v2c -c backup 10.10.10.10 recorre todo el arbol de OIDs usando la community string 'backup' sobre SNMPv2c. Aqui es donde sale el oro: version del OS, hostname, correo del admin, procesos corriendo, scripts custom y parametros de red. Es la consulta central de la enumeracion SNMP."
+    },
+    {
+      "enunciado": "Ya tienes la community string 'backup' de 10.10.10.10 y quieres enumerar OIDs de forma masiva y rapida con braa. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "braa backup@10.10.10.10:.1.3.6.*",
+        "braa backup@10.10.10.10:.1.*"
+      ],
+      "pista": "braa usa el formato community@IP:OID, con un comodin al final del OID.",
+      "explicacion": "braa backup@10.10.10.10:.1.3.6.* consulta OIDs de forma masiva y mucho mas rapida que snmpwalk, porque implementa su propio stack SNMP y consulta en paralelo. Se usa cuando snmpwalk es lento o cuando quieres barrer un rango grande de OIDs de una vez."
+    },
+    {
+      "enunciado": "Quieres confirmar que el servicio SNMP de 10.10.10.10 esta activo escaneando su puerto, recordando que SNMP corre sobre UDP. Escribe el comando de nmap.",
+      "respuestas_aceptadas": [
+        "nmap -sU -p161 10.10.10.10",
+        "sudo nmap -sU -p161 10.10.10.10",
+        "nmap -p161 -sU 10.10.10.10"
+      ],
+      "pista": "SNMP no es TCP, tienes que usar el tipo de escaneo de UDP en nmap.",
+      "explicacion": "nmap -sU -p161 10.10.10.10 escanea el puerto 161 sobre UDP. El detalle clave es -sU, porque SNMP usa UDP y un escaneo TCP normal no lo detectaria. Confirmar que el puerto esta abierto es el arranque antes de buscar la community string."
+    }
+  ]
+}

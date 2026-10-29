@@ -1,0 +1,96 @@
+{
+  "tool": {
+    "nombre": "MSSQL",
+    "protocolo": "MSSQL (1433 tcp)",
+    "descripcion": "Microsoft SQL Server. Sistema de gestion de bases de datos de Microsoft, corre por defecto en el puerto 1433. La instancia por defecto suele llamarse MSSQLSERVER y las bases de sistema son master, model, msdb y tempdb. En enumeracion buscamos version, credenciales debiles (tipico sa con clave debil o vacia), configuraciones peligrosas como xp_cmdshell, y una vez dentro exploramos bases y tablas. Cliente principal en Linux: mssqlclient.py de Impacket."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -p1433 --script ms-sql-info 10.10.10.10",
+      "descripcion": "Escaneo basico que identifica la instancia MSSQL y trae informacion de version y configuracion."
+    },
+    {
+      "comando": "nmap -sV -p1433 --script ms-sql-ntlm-info 10.10.10.10",
+      "descripcion": "Fuerza una respuesta NTLM del servidor que revela NetBIOS, nombre DNS y version del OS."
+    },
+    {
+      "comando": "nmap -sV -p1433 --script ms-sql-empty-password 10.10.10.10",
+      "descripcion": "Comprueba si alguna cuenta, tipicamente sa, permite login sin contrasena."
+    },
+    {
+      "comando": "impacket-mssqlclient <usuario>:<contrasena>@10.10.10.10",
+      "descripcion": "Se conecta a la instancia MSSQL con el cliente de Impacket usando autenticacion SQL."
+    },
+    {
+      "comando": "impacket-mssqlclient <usuario>:<contrasena>@10.10.10.10 -windows-auth",
+      "descripcion": "Se conecta usando autenticacion de Windows en vez de autenticacion SQL."
+    },
+    {
+      "comando": "mssqlclient.py <usuario>:<contrasena>@10.10.10.10",
+      "descripcion": "Misma conexion invocando directamente el script mssqlclient.py de Impacket."
+    },
+    {
+      "comando": "SELECT @@version;",
+      "descripcion": "Dentro de la sesion MSSQL, devuelve la version completa del servidor."
+    },
+    {
+      "comando": "SELECT name FROM sys.databases;",
+      "descripcion": "Dentro de la sesion, lista todas las bases de datos del servidor."
+    },
+    {
+      "comando": "enable_xp_cmdshell",
+      "descripcion": "Comando del propio mssqlclient que intenta habilitar xp_cmdshell para ejecutar comandos del sistema operativo."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres identificar la instancia MSSQL de 10.10.10.10 y traer su informacion basica con el script de nmap especifico. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -p1433 --script ms-sql-info 10.10.10.10",
+        "nmap -sV -p1433 --script ms-sql-info 10.10.10.10",
+        "nmap --script ms-sql-info -p1433 10.10.10.10",
+        "sudo nmap -sV -p1433 --script ms-sql-info 10.10.10.10"
+      ],
+      "pista": "El script se llama ms-sql-info y MSSQL escucha en el puerto 1433.",
+      "explicacion": "nmap -sV -p1433 --script ms-sql-info 10.10.10.10 identifica la instancia MSSQL y devuelve version, nombre de instancia y datos del servidor. Es el arranque de la enumeracion antes de intentar autenticarte."
+    },
+    {
+      "enunciado": "Encontraste las credenciales sa con contrasena 'Password1' en 10.10.10.10. Conectate a la instancia MSSQL usando el cliente de Impacket con autenticacion SQL. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "impacket-mssqlclient sa:Password1@10.10.10.10",
+        "mssqlclient.py sa:Password1@10.10.10.10",
+        "python3 mssqlclient.py sa:Password1@10.10.10.10"
+      ],
+      "pista": "El cliente es mssqlclient de Impacket y el formato de credenciales es usuario:contrasena@IP.",
+      "explicacion": "impacket-mssqlclient sa:Password1@10.10.10.10 abre una sesion contra la instancia usando autenticacion SQL. La cuenta sa es el administrador del sistema en MSSQL, asi que si entras con ella tienes control total. En Linux es el cliente estandar para MSSQL porque no dependes de herramientas de Windows."
+    },
+    {
+      "enunciado": "Las credenciales de 10.10.10.10 son de dominio y necesitas autenticacion de Windows en vez de SQL. Conectate con el cliente de Impacket usando el flag apropiado (usuario sql_svc, clave Secret123). Escribe el comando.",
+      "respuestas_aceptadas": [
+        "impacket-mssqlclient sql_svc:Secret123@10.10.10.10 -windows-auth",
+        "mssqlclient.py sql_svc:Secret123@10.10.10.10 -windows-auth"
+      ],
+      "pista": "Es la misma conexion de Impacket pero agregando el flag -windows-auth al final.",
+      "explicacion": "impacket-mssqlclient sql_svc:Secret123@10.10.10.10 -windows-auth usa autenticacion de Windows en lugar de la autenticacion SQL nativa. El flag -windows-auth es necesario cuando las credenciales son de cuentas del dominio o locales de Windows y no logins propios de SQL Server."
+    },
+    {
+      "enunciado": "Ya estas dentro de la sesion MSSQL y quieres ver la version completa del servidor. Escribe la consulta.",
+      "respuestas_aceptadas": [
+        "SELECT @@version;",
+        "select @@version;",
+        "SELECT @@VERSION;"
+      ],
+      "pista": "Es un SELECT sobre la variable global de version, que lleva doble arroba.",
+      "explicacion": "SELECT @@version; devuelve la version completa de SQL Server, incluyendo edicion y sistema operativo. @@version es una variable global del servidor, por eso lleva el doble arroba. Es lo primero que se consulta al entrar para saber contra que estas."
+    },
+    {
+      "enunciado": "Dentro de la sesion quieres listar todas las bases de datos del servidor consultando la vista de sistema. Escribe la consulta.",
+      "respuestas_aceptadas": [
+        "SELECT name FROM sys.databases;",
+        "select name from sys.databases;"
+      ],
+      "pista": "Haz un SELECT del campo name sobre la vista sys.databases.",
+      "explicacion": "SELECT name FROM sys.databases; lista todas las bases de datos. Las de sistema (master, model, msdb, tempdb) siempre estan, asi que lo interesante son las bases personalizadas que aparezcan, que contienen los datos reales. En el examen suelen pedir justo el nombre de la base no predeterminada."
+    }
+  ]
+}

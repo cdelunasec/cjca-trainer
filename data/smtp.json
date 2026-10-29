@@ -1,0 +1,93 @@
+{
+  "tool": {
+    "nombre": "SMTP",
+    "protocolo": "SMTP (25/465/587 tcp)",
+    "descripcion": "Simple Mail Transfer Protocol. Protocolo para envio de correo entre servidores. En enumeracion buscamos el banner del servidor, los comandos soportados (con EHLO) y sobre todo enumerar usuarios validos abusando de VRFY, EXPN y RCPT TO. Herramientas clave: nmap, telnet/nc y smtp-user-enum."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sV -sC -p25 10.10.10.10",
+      "descripcion": "Escaneo de version y scripts por defecto sobre el puerto SMTP."
+    },
+    {
+      "comando": "nmap -p25 --script smtp-commands 10.10.10.10",
+      "descripcion": "Lista los comandos SMTP soportados por el servidor (EHLO, VRFY, EXPN, AUTH)."
+    },
+    {
+      "comando": "nmap -p25 --script smtp-enum-users 10.10.10.10",
+      "descripcion": "Enumera usuarios validos usando VRFY/EXPN/RCPT con el script de nmap."
+    },
+    {
+      "comando": "telnet 10.10.10.10 25",
+      "descripcion": "Se conecta al puerto SMTP en modo interactivo para hablar el protocolo a mano."
+    },
+    {
+      "comando": "nc -nv 10.10.10.10 25",
+      "descripcion": "Se conecta al puerto SMTP con netcat, alternativa a telnet."
+    },
+    {
+      "comando": "VRFY root",
+      "descripcion": "Dentro de la sesion SMTP, verifica si el usuario root existe en el servidor."
+    },
+    {
+      "comando": "EXPN root",
+      "descripcion": "Dentro de la sesion SMTP, expande una lista o alias para revelar usuarios reales."
+    },
+    {
+      "comando": "smtp-user-enum -M VRFY -U users.txt -t 10.10.10.10",
+      "descripcion": "Enumera usuarios validos por el metodo VRFY usando un wordlist."
+    },
+    {
+      "comando": "smtp-user-enum -M RCPT -U users.txt -t 10.10.10.10",
+      "descripcion": "Enumera usuarios validos por el metodo RCPT TO cuando VRFY esta deshabilitado."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres hacer un escaneo de version y scripts por defecto sobre el puerto SMTP (25) de 10.10.10.10 con nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sV -sC -p25 10.10.10.10",
+        "nmap -sC -sV -p25 10.10.10.10",
+        "nmap -sV -sC -p 25 10.10.10.10"
+      ],
+      "pista": "Combina -sV con -sC y limita al puerto 25.",
+      "explicacion": "nmap -sV -sC -p25 10.10.10.10 saca el banner del servicio SMTP (Postfix, Exim, Sendmail) y corre los scripts por defecto, que ya te dicen los comandos soportados. Es el primer paso antes de intentar enumerar usuarios."
+    },
+    {
+      "enunciado": "Quieres listar los comandos SMTP que soporta el servidor 10.10.10.10 con el script smtp-commands de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -p25 --script smtp-commands 10.10.10.10",
+        "nmap --script smtp-commands -p25 10.10.10.10",
+        "nmap -p 25 --script smtp-commands 10.10.10.10"
+      ],
+      "pista": "Usa --script smtp-commands sobre el puerto 25.",
+      "explicacion": "nmap -p25 --script smtp-commands 10.10.10.10 dice que verbos SMTP acepta el servidor (VRFY, EXPN, AUTH, STARTTLS). Saber si VRFY o EXPN estan activos te dice si puedes enumerar usuarios validos por ese camino."
+    },
+    {
+      "enunciado": "Quieres conectarte en modo interactivo al puerto SMTP de 10.10.10.10 con telnet para hablar el protocolo a mano. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "telnet 10.10.10.10 25"
+      ],
+      "pista": "Es telnet, la IP y el puerto SMTP.",
+      "explicacion": "telnet 10.10.10.10 25 abre una sesion cruda con el servidor SMTP. Ya dentro puedes hacer HELO, VRFY, EXPN, MAIL FROM y RCPT TO para probar usuarios uno a uno o entender que responde el servidor."
+    },
+    {
+      "enunciado": "Estas dentro de una sesion SMTP interactiva y quieres verificar si el usuario root existe en el servidor. Escribe el comando SMTP.",
+      "respuestas_aceptadas": [
+        "VRFY root",
+        "vrfy root"
+      ],
+      "pista": "El verbo SMTP para verificar un usuario son cuatro letras que empiezan por V.",
+      "explicacion": "VRFY root le pregunta al servidor si el usuario root existe. Si responde 250 o 252, el usuario es valido; si responde 550, no existe. Es el metodo clasico para enumerar cuentas validas cuando VRFY esta habilitado."
+    },
+    {
+      "enunciado": "Quieres enumerar usuarios validos en 10.10.10.10 por el metodo VRFY, usando la wordlist users.txt con smtp-user-enum. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "smtp-user-enum -M VRFY -U users.txt -t 10.10.10.10",
+        "smtp-user-enum -M VRFY -U users.txt -t 10.10.10.10 -p 25"
+      ],
+      "pista": "smtp-user-enum usa -M para el metodo, -U para el wordlist y -t para el target.",
+      "explicacion": "smtp-user-enum -M VRFY -U users.txt -t 10.10.10.10 automatiza lo que harias a mano con VRFY, probando cada nombre de la lista y quedandose con los validos. Si VRFY no funciona, se cambia el metodo con -M RCPT."
+    }
+  ]
+}

